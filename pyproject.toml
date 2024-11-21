@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.11"
 xrpl-py = "^3.0.0"
 ipykernel = "^6.29.5"
+cryptoconditions = "^0.8.1"
 
 
 [build-system]
