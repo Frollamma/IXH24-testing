@@ -1,36 +1,11 @@
-import xrpl
-import json
-
-from mod1 import get_account, get_account_info, send_xrp
-from mod2 import (
-    create_trust_line,
-    send_currency,
-    get_balance,
-    configure_account,
-)
-from mod3 import (
-    mint_token,
-    get_tokens,
-    burn_token,
-)
-from mod4 import (
-    create_sell_offer,
-    create_buy_offer,
-    get_offers,
-    cancel_offer,
-    accept_sell_offer,
-    accept_buy_offer,
-)
-from utils import get_wallet, print_balances
-from xrpl.account import get_next_valid_seq_number, get_balance
-from xrpl.models import Payment, Tx
+from utils import get_wallet, print_balances, mint_nft_token, create_sell_offer, _generate_xrpl_wallet_seed, accept_sell_offer
+from xrpl.account import get_next_valid_seq_number
+from xrpl.models import Payment
 from xrpl.transaction import sign, submit_and_wait
-from xrpl.wallet import Wallet, generate_faucet_wallet
 from xrpl.ledger import get_latest_validated_ledger_sequence
 from xrpl.clients import JsonRpcClient
 from datetime import datetime, timedelta
 from xrpl.utils import datetime_to_ripple_time
-
 
 seed_company = "sEd7uhRLEHf7sELoTUiKTcDwgn3zvdA"
 seed_receiver = "sEd7vJWGo5cYxju2raWQ1yQSFPgVejN"
@@ -41,8 +16,11 @@ taxon = 0
 MIN_AMOUNT = "2000"
 MIN_FEE = "20"
 
-def create_and_transfer_nft(seed_company, seed_receiver, product_uri, taxon, chain_url = "https://s.altnet.rippletest.net:51234"):
+def create_and_transfer_nft(seed_company, product_uri, taxon, seed_receiver = None, chain_url = "https://s.altnet.rippletest.net:51234"):
     try:
+        if seed_receiver is None:
+            seed_receiver = _generate_xrpl_wallet_seed()
+        
         client=JsonRpcClient(chain_url)
 
         wallet_company = get_wallet(seed_company)
@@ -50,7 +28,7 @@ def create_and_transfer_nft(seed_company, seed_receiver, product_uri, taxon, cha
         
         flag = 8
         transfer_fee = 0
-        response_mint_token = mint_token(
+        response_mint_token = mint_nft_token(
                 seed_company,
                 product_uri,
                 flag,
@@ -93,13 +71,12 @@ def create_and_transfer_nft(seed_company, seed_receiver, product_uri, taxon, cha
         response_accept_sell_offer = accept_sell_offer(seed_receiver, sell_offer_ledger_index)
         # print(f"{response_accept_sell_offer = }")
 
-        if response_accept_sell_offer['meta']['TransactionResult'] == 'tesSUCCESS':
-            return True
+        if not response_accept_sell_offer['meta']['TransactionResult'] == 'tesSUCCESS':
+            raise Exception(f'Didn\'t work: {e}')
     except Exception as e:
         raise Exception(f'Didn\'t work: {e}')
 
 if __name__ == '__main__':
-    result = create_and_transfer_nft(seed_company, seed_receiver, product_uri, taxon)
+    result = create_and_transfer_nft(seed_company, product_uri, taxon, seed_receiver=seed_receiver)
+    print("Everything ok")
     
-    if result == True:
-        print("Everything ok")
